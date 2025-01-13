@@ -13,11 +13,11 @@ import java.util.concurrent.TimeUnit;
 import static com.hmdp.utils.RedisConstants.LOGIN_USER_KEY;
 import static com.hmdp.utils.RedisConstants.LOGIN_USER_TTL;
 
-public class ReFreshToken implements HandlerInterceptor {
+public class ReFreshTokenInterceptor implements HandlerInterceptor {
 
     private final RedisTemplate<String,Object> redisTemplate;
 
-    public ReFreshToken(RedisTemplate<String, Object> redisTemplate) {
+    public ReFreshTokenInterceptor(RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
