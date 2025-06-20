@@ -12,11 +12,14 @@ import com.hmdp.service.IUserInfoService;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.RegexUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 import java.util.Random;
+
+import static com.hmdp.utils.RedisConstants.LOGIN_CODE_KEY;
 
 /**
  * <p>
@@ -37,11 +40,14 @@ public class UserController {
     @Resource
     private IUserInfoService userInfoService;
 
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
     /**
      * 发送手机验证码
      */
     @PostMapping("code")
-    public Result sendCode(@RequestParam("phone") String phone, HttpSession session) {
+    public Result sendCode(@RequestParam("phone") String phone) {
         // TODO 发送短信验证码并保存验证码
         if(RegexUtils.isPhoneInvalid(phone)){
             return Result.fail("手机号格式错误");
@@ -50,9 +56,10 @@ public class UserController {
         String code = RandomUtil.randomNumbers(6);
         // 保存到session
         // tips: HttpSession是会话级别的，随着用户打开浏览器建立，关闭浏览器释放。通过sessionId标识
-        session.setAttribute("code", code);
-        log.debug("用户 {}",session.getId());
-        log.debug("发送验证码成功{}",code);
+//        session.setAttribute("code", code);
+//        log.debug("用户 {}",session.getId());
+        stringRedisTemplate.opsForValue().set(LOGIN_CODE_KEY+phone, code);
+        log.debug("发送验证码成功 {}",code);
         return Result.ok();
     }
 
@@ -61,9 +68,10 @@ public class UserController {
      * @param loginForm 登录参数，包含手机号、验证码；或者手机号、密码
      */
     @PostMapping("/login")
-    public Result login(@RequestBody LoginFormDTO loginForm, HttpSession session){
+    public Result login(@RequestBody LoginFormDTO loginForm){
         // 实现登录功能
-        return userService.login(loginForm,session);
+//        return userService.login(loginForm,session);
+        return userService.login(loginForm);
     }
 
     /**
