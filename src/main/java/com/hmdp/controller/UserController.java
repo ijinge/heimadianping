@@ -1,16 +1,22 @@
 package com.hmdp.controller;
 
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.RandomUtil;
 import com.hmdp.dto.LoginFormDTO;
 import com.hmdp.dto.Result;
+import com.hmdp.dto.UserDTO;
+import com.hmdp.entity.User;
 import com.hmdp.entity.UserInfo;
 import com.hmdp.service.IUserInfoService;
 import com.hmdp.service.IUserService;
+import com.hmdp.utils.RegexUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
+import java.util.Random;
 
 /**
  * <p>
@@ -37,7 +43,17 @@ public class UserController {
     @PostMapping("code")
     public Result sendCode(@RequestParam("phone") String phone, HttpSession session) {
         // TODO 发送短信验证码并保存验证码
-        return Result.fail("功能未完成");
+        if(RegexUtils.isPhoneInvalid(phone)){
+            return Result.fail("手机号格式错误");
+        }
+        // 生成验证码
+        String code = RandomUtil.randomNumbers(6);
+        // 保存到session
+        // tips: HttpSession是会话级别的，随着用户打开浏览器建立，关闭浏览器释放。通过sessionId标识
+        session.setAttribute("code", code);
+        log.debug("用户 {}",session.getId());
+        log.debug("发送验证码成功{}",code);
+        return Result.ok();
     }
 
     /**
@@ -46,8 +62,8 @@ public class UserController {
      */
     @PostMapping("/login")
     public Result login(@RequestBody LoginFormDTO loginForm, HttpSession session){
-        // TODO 实现登录功能
-        return Result.fail("功能未完成");
+        // 实现登录功能
+        return userService.login(loginForm,session);
     }
 
     /**
