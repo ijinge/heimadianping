@@ -9,8 +9,13 @@ import com.hmdp.mapper.ShopMapper;
 import com.hmdp.service.IShopService;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+
+import java.util.concurrent.TimeUnit;
+
+import static com.hmdp.utils.RedisConstants.CACHE_SHOP_KEY;
 
 /**
  * <p>
@@ -35,12 +40,29 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             Shop shop = JSONUtil.toBean(shopJson, Shop.class);
             return Result.ok(shop);
         }
+        // 查数据库
         Shop shop = query().eq("id", id).one();
         if(shop == null) {
             return  Result.fail("店铺不存在");
         }
         // 写入Redis中
-        stringRedisTemplate.opsForValue().set(key,JSONUtil.toJsonStr(shop));
+        stringRedisTemplate.opsForValue().set(key,JSONUtil.toJsonStr(shop),30L, TimeUnit.MINUTES);
         return Result.ok(shop);
+    }
+    //*
+    // 实现数据库与缓存的双写一致
+    // */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result update(Shop shop) {
+        Long id = shop.getId();
+        if(id == null) {
+            return Result.fail("店铺id不能为空");
+        }
+        // 1.更新数据库
+        updateById(shop);
+        // 2.删除缓存
+        stringRedisTemplate.delete(CACHE_SHOP_KEY+id);
+        return Result.ok();
     }
 }
